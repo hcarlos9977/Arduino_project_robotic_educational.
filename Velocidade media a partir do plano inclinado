@@ -1,0 +1,148 @@
+// DEFINIÇÕES DE PINOS
+#define pinLdrA A0
+#define pinLdrB A1
+
+// DEFINIÇÕES
+#define valA 600
+#define valB 100
+
+#define DISTANCIA 0.41 // DISTANCIA ENTRE OS SENSORES EM METROS 
+
+
+#include <math.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// DEFINIÇÕES
+#define endereco  0x27 // Endereços comuns: 0x27, 0x3F
+#define colunas   16
+#define linhas    2
+
+// INSTANCIANDO OBJETOS
+LiquidCrystal_I2C lcd(endereco, colunas, linhas);
+
+int estadoLdrA;
+int estadoLdrB;
+int estadoLdrAAnt;
+int estadoLdrBAnt;
+
+int estadoContagem;   //0=standby 1=contandoA 2=contandoB 3=Fim contagem
+
+unsigned long tempoA;
+unsigned long tempoB;
+
+void setup() {
+  Serial.begin(9600);
+  lcd.init(); // INICIA A COMUNICAÇÃO COM O DISPLAY
+  lcd.backlight(); // LIGA A ILUMINAÇÃO DO DISPLAY
+  lcd.clear(); // LIMPA O DISPLAY
+  //lcd.noBacklight(); // DESLIGA A ILUMINAÇÃO DO DISPLAY
+  pinMode(pinLdrA, INPUT);
+  pinMode(pinLdrB, INPUT);
+
+  estadoLdrAAnt = analogRead(pinLdrA);
+  estadoLdrBAnt = analogRead(pinLdrB);
+
+  estadoContagem  = 0;
+
+  Serial.println("Fim do setup()");
+  lcd.print("Fim do Setup");
+  delay(1000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Aguardando");
+}
+
+void loop() {
+  estadoLdrA = analogRead(pinLdrA);
+  estadoLdrB = analogRead(pinLdrB);
+
+  if (estadoContagem == 2) {
+    if (estadoLdrA <= valA && estadoLdrAAnt > valA) {
+      tempoB = millis();
+      estadoContagem = 3;
+      delay(tempoB - tempoA);  //aguarda para filtrar o efeito bouncing
+    }
+  }
+
+  if (estadoContagem == 1) { 
+     if (estadoLdrB <= valB && estadoLdrBAnt > valB) {
+       tempoB = millis();
+       estadoContagem = 3;
+       delay(tempoB - tempoA);  //aguarda para filtrar o efeito bouncing
+     }
+  }
+  
+  if (estadoContagem == 0) {
+     if (estadoLdrA <= valA && estadoLdrAAnt > valA) {
+       tempoA = millis();
+       estadoContagem = 1;
+     }
+
+     if (estadoLdrB <= valB && estadoLdrBAnt > valB) {
+       tempoA = millis();
+       estadoContagem = 2;
+     }
+  }
+  
+  if (estadoContagem == 3) {
+    float intervalo = (float)(tempoB - tempoA)/1000 ; // INTERVALO EM SEGUNDOS
+    Serial.print("Tempo: ");
+    Serial.print(intervalo);
+    Serial.println(" segundos");
+
+    float angulo = 9.7;
+    float gravidade = (9.81);
+    float mc = 0.03;
+    float velocidade = ((gravidade) * sin(angulo * PI / 180)- mc * gravidade * cos(angulo * PI / 180))*intervalo; // velocidade em METROS/SEGUNDO
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Calculando a ");
+    lcd.setCursor(0, 1);
+    lcd.print("Vel do brabo");
+    delay(2000);
+    Serial.print("Vel.: ");
+    Serial.print(velocidade, 2);
+    Serial.println(" m/s");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Vel: ");
+    lcd.print(velocidade, 2);
+    lcd.print(" m/s");
+  
+
+    velocidade = (velocidade*3.6); // velocidade em KM/H
+
+    Serial.print("Vel.: ");
+    Serial.print(velocidade, 2);
+    Serial.println(" km/h");
+    lcd.setCursor(0, 1);
+    lcd.print("Vel: ");
+    lcd.print(velocidade, 2);
+    lcd.print(" km/h");
+    delay(3000);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(intervalo);
+    lcd.print(" Segundos");
+
+    
+
+    delay(3000); // Aguarda 3 segundo antes de reiniciar a medição
+
+    
+
+    tempoA = 0;
+    tempoB = 0;
+
+    estadoContagem = 0;
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Aguardando...");
+  }
+
+  estadoLdrAAnt = estadoLdrA;
+  estadoLdrBAnt = estadoLdrB;
+}
+
+// IMPLEMENTO DE FUNÇÕES
