@@ -1,26 +1,29 @@
+#include <LiquidCrystal_I2C.h>
+
 // DEFINIÇÕES DE PINOS
 #define pinLdrA A0
 #define pinLdrB A1
 
 // DEFINIÇÕES
-#define valA 600
+#define valA 100
 #define valB 100
 
 #define DISTANCIA 0.41 // DISTANCIA ENTRE OS SENSORES EM METROS 
 
-
+// INSTANCIANDO OBJETOS
 #include <math.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+
+
 
 // DEFINIÇÕES
 #define endereco  0x27 // Endereços comuns: 0x27, 0x3F
 #define colunas   16
 #define linhas    2
 
-// INSTANCIANDO OBJETOS
 LiquidCrystal_I2C lcd(endereco, colunas, linhas);
 
+// DECLARAÇÃO DE VARIÁVEIS
 int estadoLdrA;
 int estadoLdrB;
 int estadoLdrAAnt;
@@ -33,10 +36,11 @@ unsigned long tempoB;
 
 void setup() {
   Serial.begin(9600);
-  lcd.init(); // INICIA A COMUNICAÇÃO COM O DISPLAY
-  lcd.backlight(); // LIGA A ILUMINAÇÃO DO DISPLAY
+  lcd.init();
+  lcd.backlight();
   lcd.clear(); // LIMPA O DISPLAY
-  //lcd.noBacklight(); // DESLIGA A ILUMINAÇÃO DO DISPLAY
+  
+
   pinMode(pinLdrA, INPUT);
   pinMode(pinLdrB, INPUT);
 
@@ -45,12 +49,13 @@ void setup() {
 
   estadoContagem  = 0;
 
-  Serial.println("Fim do setup()");
+  Serial.println("Fim do setup");
   lcd.print("Fim do Setup");
   delay(1000);
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Aguardando");
+  lcd.print("Aguardando...");
+  
 }
 
 void loop() {
@@ -86,15 +91,15 @@ void loop() {
   }
   
   if (estadoContagem == 3) {
-    float intervalo = (float)(tempoB - tempoA)/1000 ; // INTERVALO EM SEGUNDOS
+    float intervalo = (float)(tempoB - tempoA) / 1000.0; // INTERVALO EM SEGUNDOS
     Serial.print("Tempo: ");
     Serial.print(intervalo);
     Serial.println(" segundos");
 
     float angulo = 9.7;
     float gravidade = (9.81);
-    float mc = 0.03;
-    float velocidade = ((gravidade) * sin(angulo * PI / 180)- mc * gravidade * cos(angulo * PI / 180))*intervalo; // velocidade em METROS/SEGUNDO
+    float mc = (sin(angulo * PI / 180)-(2 * DISTANCIA)/(gravidade*intervalo*intervalo));
+    float velocidade = ((gravidade) * sin(angulo * PI / 180)- mc * gravidade * cos(angulo * PI / 180))*(intervalo / 2); // velocidade em METROS/SEGUNDO
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Calculando a ");
@@ -144,5 +149,3 @@ void loop() {
   estadoLdrAAnt = estadoLdrA;
   estadoLdrBAnt = estadoLdrB;
 }
-
-// IMPLEMENTO DE FUNÇÕES
