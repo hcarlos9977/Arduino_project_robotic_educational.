@@ -1,0 +1,25 @@
+#include <Servo.h>
+
+Servo servo1;
+Servo servo2;
+void setup() {
+  servo1.attach(A0);
+  servo2.attach(A1);
+  pinMode(2, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int LDR = analogRead (A3);
+ 
+  Serial.println(LDR);
+  int angle = analogRead(A3);
+  angle = map(angle, 0, 1023, 0, 180);
+  servo1.write(angle);
+  delay(15);
+  int LDR1 = analogRead (A2);
+  int giro = analogRead(A2);
+  giro = map(giro, 0, 1023, 0, 180);
+  servo2.write(giro);
+  delay(15);
+}
